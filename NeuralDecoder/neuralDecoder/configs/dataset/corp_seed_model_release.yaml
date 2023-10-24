@@ -1,0 +1,41 @@
+name: handwriting
+sessions:
+  - t5.2022.05.18
+  - t5.2022.05.23
+  - t5.2022.05.25
+  - t5.2022.06.01
+  - t5.2022.06.03
+  - t5.2022.06.06
+  - t5.2022.06.08
+  - t5.2022.06.13
+  - t5.2022.06.15
+  - t5.2022.06.22
+  - t5.2022.09.01
+datasetToLayerMap: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+datasetProbability:
+datasetProbabilityVal: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+dataDir:
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+  - /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+syntheticDataDir:
+syntheticMixingRate: 0.0
+whiteNoiseSD: 1.2
+constantOffsetSD: 0.6
+randomWalkSD: 0.02
+nInputFeatures: 192
+timeWarpFactor: 0.0
+staticGainSD: 0.0
+nClasses: 31
+maxSeqElements: 500
+
+# Dataset shuffle buffer size
+bufferSize: 192
