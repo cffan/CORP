@@ -22,4 +22,4 @@ cd examples
 ./run_no_recalibration.sh  # Run no recalibration baseline
 ```
 
-Plot the results with `examples/plot_error_rate_curve.ipynb`
+Plot the results with `examples/plot_offline_error_rate_curve.ipynb`
