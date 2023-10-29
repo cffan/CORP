@@ -7,7 +7,7 @@ We provide code and data to reproduce the results in the paper.
 ## Requirements
 
 The code has been tested on CentOS 7 with Python 3.9 and Tensorflow 2.7.0.
-Running CORP requires a GPU with at least 12GB of memory, and at least 40GB of memory.
+Running CORP requires a GPU with at least 12GB of memory, and at least 40GB of main memory.
 
 ## Usage
 
