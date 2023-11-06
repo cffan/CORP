@@ -19,3 +19,13 @@ Running CORP requires a GPU with at least 12GB of memory, and at least 40GB of m
 3. See the README in [OnlineRecalibrator](./OnlineRecalibrator/README.md) for how to run CORP.
 
 ## Citation
+
+```
+@inproceedings{
+    fan2023plugandplay,
+    title={Plug-and-Play Stability for Intracortical Brain-Computer Interfaces: A One-Year Demonstration of Seamless Brain-to-Text Communication},
+    author={Chaofei Fan, Nick Hahn, Foram Kamdar, Donald Avansino, Guy H. Wilson, Leigh Hochberg, Krishna V. Shenoy, Jaimie M. Henderson, Francis R Willett},
+    booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+    year={2023},
+}
+```
