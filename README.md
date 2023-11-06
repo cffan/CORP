@@ -15,7 +15,7 @@ Running CORP requires a GPU with at least 12GB of memory, and at least 40GB of m
     - Install [NeuralDecoder](./NeuralDecoder/)
     - Install [LanguageModelDecoder](./LanguageModelDecoder/)
     - Install [OnlineRecalibrator](./OnlineRecalibrator/)
-2. Download the [data]()
+2. Download the [data](https://doi.org/doi:10.5061/dryad.hqbzkh1p6)
 3. See the README in [OnlineRecalibrator](./OnlineRecalibrator/README.md) for how to run CORP.
 
 ## Citation
