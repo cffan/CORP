@@ -95,18 +95,23 @@ def gpt2_lm_decode(model, tokenizer, nbest, acousticScale, lengthPenlaty, alpha,
         totalScores = totalScores - np.max(totalScores)
         probs = np.exp(totalScores)
         return bestHyp, probs[maxIdx] / np.sum(probs)
-
-def cer_with_gpt2_decoder(model, tokenizer, nbestOutputs, acousticScale,
-                          inferenceOut, outputType='handwriting',
-                          returnCI=False,
-                          lengthPenalty=0.0,
-                          alpha=1.0):
+    
+def gpt2_decode(model, tokenizer, nbestOutputs, acousticScale, lengthPenalty, alpha):
     decodedSentences = []
     confidences = []
     for i in trange(len(nbestOutputs)):
         decoded, confidence = gpt2_lm_decode(model, tokenizer, nbestOutputs[i], acousticScale, lengthPenalty, alpha, returnConfidence=True)
         decodedSentences.append(decoded)
         confidences.append(confidence)
+
+    return decodedSentences, confidences
+
+def cer_with_gpt2_decoder(model, tokenizer, nbestOutputs, acousticScale,
+                          inferenceOut, outputType='handwriting',
+                          returnCI=False,
+                          lengthPenalty=0.0,
+                          alpha=1.0):
+    decodedSentences, confidences = gpt2_decode(model, tokenizer, nbestOutputs, acousticScale, lengthPenalty, alpha)
 
     if outputType == 'handwriting':
         trueSentences = _extract_true_sentences(inferenceOut)
