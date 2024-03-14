@@ -46,12 +46,12 @@ sessions:
 session_input_layers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,] #21, 22, 23, 24, 25]
 start_session_idx: 11
 
-seed_model_data_dir: /oak/stanford/groups/henderj/stfan/data/CORP_data_release/seed_model_training_data/tfrecords/
+seed_model_data_dir: ./data/seed_model_training_data/tfrecords/
 data_dir:
 
 output_dir:
 
-init_model_dir: /oak/stanford/groups/henderj/stfan/data/CORP_data_release/pretrained_seed_model/
+init_model_dir: ./data/pretrained_seed_model/
 
 init_model_ckpt_idx: 12500
 
@@ -69,8 +69,8 @@ recalibration: True
 num_norm_sentences: 10
 num_curr_sentences: -1
 
-ngram_dir: /oak/stanford/groups/henderj/stfan/data/CORP_data_release/language_model/
-lm_cache_dir: /scratch/users/stfan/huggingface/
+ngram_dir: ./data/language_model/
+lm_cache_dir: ./data/huggingface/
 
 gpt2_model: gpt2-xl
 
