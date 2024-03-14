@@ -13,7 +13,7 @@ import neuralDecoder.utils.lmDecoderUtils as lmDecoderUtils
 from neuralDecoder.datasets.handwritingDataset import CHAR_DEF
 from neuralDecoder.neuralSequenceDecoder import NeuralSequenceDecoder, gaussSmooth
 
-from .corp_recalibrator import CORPRecalibrator
+from corp_recalibrator import CORPRecalibrator
 
 class CORPDecoder(BCIDecoder):
     def __init__(self, 
@@ -23,6 +23,7 @@ class CORPDecoder(BCIDecoder):
         self.corp_config = OmegaConf.load(corp_config_path)
         self.input_buffer = []
         self.token_def = CHAR_DEF
+        self.mode = self.corp_config.mode
 
         physical_devices = tf.config.list_physical_devices('GPU')
         if len(physical_devices) > 0:
@@ -30,17 +31,17 @@ class CORPDecoder(BCIDecoder):
 
         # Load pretrained model
         self.decoder = self._load_model(self.corp_config['init_model_dir'],
-                              self.corp_config['init_model_ckpt_idx'],
-                              dropout=self.corp_config.get('dropout', 0.4))
+                              self.corp_config['init_model_ckpt_idx'])
 
-        # Load LMs
-        self._load_ngram_lm(self.corp_config['ngram_dir'])
-        self._load_transformer_lm(self.corp_config['gpt2_model'])
+        if self.mode != 'dev':
+            # Load LMs
+            self._load_ngram_lm(self.corp_config['ngram_dir'])
+            self._load_transformer_lm(self.corp_config['gpt2_model'])
 
         # Create recalibrator
         self.recalibrator = CORPRecalibrator(self.corp_config, self.decoder)
 
-    def _load_model(self, init_model_dir, ckpt_idx, dropout):
+    def _load_model(self, init_model_dir, ckpt_idx):
         cwd = os.getcwd()
         os.chdir(init_model_dir)
 
@@ -48,7 +49,6 @@ class CORPDecoder(BCIDecoder):
         args = OmegaConf.load(os.path.join(init_model_dir, 'args.yaml'))
         args['mode'] = 'infer'
         args['loadCheckpointIdx'] = ckpt_idx
-        args['model']['dropout'] = dropout
 
         # Initialize model
         tf.compat.v1.reset_default_graph()
@@ -57,9 +57,9 @@ class CORPDecoder(BCIDecoder):
         os.chdir(cwd)
 
         # Add input layers if needed
-        existing_input_layers = self.decoder.args['dataset']['datasetToLayerMap']
+        existing_input_layers = nsd.args['dataset']['datasetToLayerMap']
         requested_input_layers = self.corp_config['session_input_layers']
-        self._add_input_layers(self.decoder, existing_input_layers, requested_input_layers)
+        self._add_input_layers(nsd, existing_input_layers, requested_input_layers)
 
         return nsd
 
@@ -88,8 +88,8 @@ class CORPDecoder(BCIDecoder):
         print(f'Loading ngram LM from {ngram_dir}')
         self.ngram_decoder = lmDecoderUtils.build_lm_decoder(
             ngram_dir,
-            acoustic_scale=self.config.acoustic_scale,
-            nbest=self.config.nbest
+            acoustic_scale=self.corp_config.acoustic_scale,
+            nbest=self.corp_config.nbest
         )
 
         self.ngram_rescore = os.path.exists(os.path.join(ngram_dir, 'G_no_prune.fst'))
@@ -99,44 +99,52 @@ class CORPDecoder(BCIDecoder):
             return
 
         print(f'Loading gpt2 {model}')
-        with tf.device('/device:GPU:0'):
+        with tf.device('/cpu:0'):
             self.gpt2_decoder, self.gpt2_tokenizer = lmDecoderUtils.build_gpt2(
-                model, cacheDir=self.lm_cache_dir
+                model, cacheDir=self.corp_config.lm_cache_dir
             )
 
     def _predict_trial(self, feats):
         inputs = feats[None, ...]  # [1, T, C]
         inputs = gaussSmooth(inputs)
-        logits = self.decoder.model(self.model.inputLayers[self.eval_day_idx](inputs))
+        logits = self.decoder.model(self.decoder.inputLayers[self.eval_day_idx](inputs))
 
-        out = {
-            'logits': logits.numpy(),
-            'logitLengths': [logits.shape[1]],
-        }
-        nbests = lmDecoderUtils.nbest_with_lm_decoder(self.ngram_decoder,
-                                                            out,
-                                                            rescore=self.ngram_rescore,
-                                                            blankPenalty=np.log(self.corp_config.blank_penalty))
-        gpt2_decoded, confidence = lmDecoderUtils.gpt2_decode(self.gpt2_decoder,
-                                                               self.gpt2_tokenizer,
-                                                               nbests,
-                                                               self.corp_config.gpt2_acoustic_scale,
-                                                               0,
-                                                               self.corp_config.gpt2_alpha)
-        
+        if not hasattr(self, 'ngram_decoder'):
+            rnn_decoded, _ = tf.nn.ctc_greedy_decoder(tf.transpose(logits, [1, 0, 2]),
+                                                      [logits.shape[1]],
+                                                      merge_repeated=True)
+            rnn_decoded = ''.join([self.token_def[c] for c in tf.sparse.to_dense(rnn_decoded[0])[0].numpy()])
+            return rnn_decoded, 1.0
+        else:
+            out = {
+                'logits': logits.numpy(),
+                'logitLengths': [logits.shape[1]],
+            }
+            nbests = lmDecoderUtils.nbest_with_lm_decoder(self.ngram_decoder,
+                                                                out,
+                                                                rescore=self.ngram_rescore,
+                                                                blankPenalty=np.log(self.corp_config.blank_penalty))
+            gpt2_decoded, confidence = lmDecoderUtils.gpt2_lm_rescore(self.gpt2_decoder,
+                                                                      self.gpt2_tokenizer,
+                                                                      nbests,
+                                                                      self.corp_config.gpt2_acoustic_scale,
+                                                                      0,
+                                                                      self.corp_config.gpt2_alpha)
+            
 
-        confidence = confidence[0]
-        gpt2_decoded = gpt2_decoded[0]
-        if self.config.task == 'handwriting':
+            confidence = confidence[0]
+            gpt2_decoded = gpt2_decoded[0]
             gpt2_decoded = gpt2_decoded.replace(' ', '>')
             gpt2_decoded = gpt2_decoded.replace('.', '~')
 
-        return gpt2_decoded, confidence
+            return gpt2_decoded, confidence
 
     def reset(self, dataset: Path = ""):
-        self.eval_day_idx = 10  # TODO: Get from dataset
+        sess_name = dataset.stem
+        sess_idx = self.corp_config.sessions.index(sess_name)
+        self.eval_day_idx = self.corp_config.session_input_layers[sess_idx]
         self.recalibrator.reset(self.eval_day_idx)
-        pass
+        self.input_buffer = []
 
     def predict(self, neural_feats: np.ndarray):
         # Buffer data
@@ -150,10 +158,15 @@ class CORPDecoder(BCIDecoder):
         norm_feats = (raw_feats - mean) / (std + 1e-8)
 
         # Predict output
-        decoded, confidence = self._predict_trial(norm_feats)
+        if self.mode != 'dev':
+            decoded, confidence = self._predict_trial(norm_feats)
+        else:
+            decoded = self.gt_transcription
+            confidence = 1.0
 
         # Recalibrate 
-        self.recalibrator.recalibrate(norm_feats, decoded, confidence)
+        if self.mode == 'online_recal':
+            self.recalibrator.recalibrate(norm_feats, decoded, confidence)
 
         # Clear states and decoder
         self.input_buffer = []

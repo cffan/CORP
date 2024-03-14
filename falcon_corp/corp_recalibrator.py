@@ -1,5 +1,5 @@
 
-import glob
+from glob import glob
 import os
 from functools import partial
 import numpy as np
@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 from omegaconf import DictConfig
 
+from neuralDecoder.datasets.handwritingDataset import CHAR_DEF
 from neuralDecoder.neuralSequenceDecoder import NeuralSequenceDecoder, gaussSmooth
 
 LABEL_MAX_LEN = 500
@@ -28,12 +29,14 @@ class CORPRecalibrator:
         self.nsd = model
         self.prev_data_buffer = {}
         self.curr_data_buffer = []
+        self.token_def = CHAR_DEF
 
         self._load_prev_data()
+        self.curr_day_idx = self.config.start_session_idx - 1
 
     def _load_prev_data(self):
         # Load previous sessions' data and pseudo labels
-        for i, sess in enumerate(self.config.sessions):
+        for i, sess in enumerate(self.config.sessions[:self.config.start_session_idx]):
             self.prev_data_buffer[self.config.session_input_layers[i]] = \
                 CORPRecalibrator._load_data(self.config.seed_model_data_dir, 
                                             sess, 
@@ -89,19 +92,21 @@ class CORPRecalibrator:
         data = tf.io.parse_single_example(proto, datasetFeatures)
         return data
     
-    def _insert_pseudo_labeled_trial(self, feats, pseudo_label):
-        trial_data = {
-            'inputFeatures': feats,
-            'seqClassIDs': np.zeros(LABEL_MAX_LEN, dtype=np.int64),
-            'nTimeSteps': feats.shape[0],
-            'nSeqElements': len(pseudo_label),
-            'transcription': np.zeros(LABEL_MAX_LEN, dtype=np.int64)
-        }
-
+    def _insert_pseudo_labeled_trial(self, feats, pseudo_label, confidence):
+        seq_class_ids = np.zeros(LABEL_MAX_LEN, dtype=np.int64)
+        transcription = np.zeros(LABEL_MAX_LEN, dtype=np.int64)
         for i, c in enumerate(pseudo_label):
-            trial_data['seqClassIDs'][i] = self.token_def.index(c) + 1
-            trial_data['transcription'][i] = ord(c)
-
+            seq_class_ids[i] = self.token_def.index(c) + 1
+            transcription[i] = ord(c)
+            
+        trial_data = {
+            'inputFeatures': tf.constant(feats, dtype=np.float32),
+            'seqClassIDs': tf.constant(seq_class_ids),
+            'nTimeSteps': tf.constant(feats.shape[0], dtype=np.int64),
+            'nSeqElements': tf.constant(len(pseudo_label), dtype=np.int64),
+            'transcription': tf.constant(transcription),
+            'confidences': tf.constant(confidence, dtype=np.float32)
+        }
         self.curr_data_buffer.append(trial_data)
 
     def _train(self):
@@ -128,9 +133,9 @@ class CORPRecalibrator:
         curr_dataset = curr_dataset.cache().repeat().shuffle(buffer_size=1024)
         dataset = tf.data.experimental.sample_from_datasets(
             [prev_dataset, curr_dataset],
-            weights=[1.0 - self.new_data_percent, self.new_data_percent]
+            weights=[1.0 - self.config.new_data_percent, self.config.new_data_percent]
         )
-        dataset = dataset.padded_batch(self.batch_size)
+        dataset = dataset.padded_batch(self.config.batch_size)
 
         # Train model
         steps = 0
@@ -140,7 +145,7 @@ class CORPRecalibrator:
                 break
 
             try:
-                ctc_loss, reg_loss, total_loss, grad_norm = self.train_step(data['inputFeatures'],
+                ctc_loss, reg_loss, total_loss, grad_norm = self._train_step(data['inputFeatures'],
                                                                  data['layerIdx'],
                                                                  data['seqClassIDs'],
                                                                  data['nTimeSteps'],
@@ -170,7 +175,7 @@ class CORPRecalibrator:
 
         return np.mean(losses), steps
     
-    def train_step(self,
+    def _train_step(self,
                    inputs,
                    layerIdx,
                    labels,
@@ -243,6 +248,7 @@ class CORPRecalibrator:
         # Call before session starts
 
         if day_idx != self.curr_day_idx:
+            print(f'Setting recalibrator to day {day_idx}')
             # Create new input layer by copying weights from last layer
             from_layer = self.nsd.inputLayers[self.config.session_input_layers[day_idx - 1]]
             to_layer = self.nsd.inputLayers[self.config.session_input_layers[day_idx]]
@@ -250,11 +256,14 @@ class CORPRecalibrator:
                 vt.assign(vf)
 
             # Move current data to prev data
+            if len(self.curr_data_buffer) > 0:
+                self.prev_data_buffer[self.config.session_input_layers[self.curr_day_idx]] = self.curr_data_buffer.copy()
+                self.curr_data_buffer = []
 
             self.curr_day_idx = day_idx
 
-    def recalibrate(self, neural_feats, decoded):
-        self._insert_pseudo_labeled_trial(neural_feats, decoded)
+    def recalibrate(self, neural_feats, decoded, confidence):
+        self._insert_pseudo_labeled_trial(neural_feats, decoded, confidence)
         self._train()
 
         # Prepare tfrecords for prev data
