@@ -19,3 +19,19 @@ pip install -e .
 cd examples
 ./train_seed_model.sh  # See comments in the script for how to locate your downloaded data.
 ```
+
+## A new baseline model for [Willett Nature 2021](https://www.nature.com/articles/s41586-021-03506-2)
+
+
+|                    |   GRU       | Bidirectional-GRU |
+|--------------------|-------------|-------------------|
+|   Heldout Trials   | 3.3% ± 0.1% |    3.2% ± 0.1%    |
+|   Heldout Blocks   |             |                   |
+
+To train the model:
+```bash
+cd examples
+./train_willett_nature_baseline.sh
+```
+
+Pre-made tfrecords can be downloaded [here](https://office365stanford-my.sharepoint.com/:u:/g/personal/stfan_stanford_edu/ESITughFEPhFu3hnfdFQvxoBFApZD0EP_Z3zQlQKUrj6Qg?e=bBS6SA).
