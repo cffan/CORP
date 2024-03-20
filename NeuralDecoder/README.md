@@ -22,11 +22,10 @@ cd examples
 
 ## A new baseline model for [Willett Nature 2021](https://www.nature.com/articles/s41586-021-03506-2)
 
-
+Raw character error rate (CER) on heldout blocks:
 |                    |   GRU       | Bidirectional-GRU |
 |--------------------|-------------|-------------------|
-|   Heldout Trials   | 3.3% ± 0.1% |    3.2% ± 0.1%    |
-|   Heldout Blocks   |             |                   |
+|   CER   | 3.3% ± 0.1% |    3.2% ± 0.1%    |
 
 To train the model:
 ```bash
