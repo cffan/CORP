@@ -519,6 +519,8 @@ class NeuralSequenceDecoder(object):
         infOut['trueSeqs'] = []
         infOut['transcriptions'] = []
         infOut['seqErrorRate'] = []
+        infOut['predictionLoss'] = []
+        infOut['regularizationLoss'] = []
         allData = []
 
         for datasetIdx, valProb in enumerate(self.args['dataset']['datasetProbabilityVal']):
@@ -531,6 +533,8 @@ class NeuralSequenceDecoder(object):
                 out = self._valStep(data, layerIdx)
 
                 infOut['logits'].append(out['logits'].numpy())
+                infOut['predictionLoss'].append(out['predictionLoss'].numpy())
+                infOut['regularizationLoss'].append(out['regularizationLoss'].numpy())
                 if self.args['lossType'] == 'ctc':
                     infOut['editDistances'].append(out['editDistance'].numpy())
                 elif self.args['lossType'] == 'ce':
@@ -575,6 +579,9 @@ class NeuralSequenceDecoder(object):
         elif self.args['lossType'] == 'ce':
             infOut['cer'] = infOut['seqErrorRate']
 
+        infOut['predictionLoss'] = np.mean(infOut['predictionLoss'])
+        infOut['regularizationLoss'] = np.mean(infOut['regularizationLoss'])
+
         if returnData:
             return infOut, allData
         else:
@@ -592,20 +599,19 @@ class NeuralSequenceDecoder(object):
 
         with self.summary_writer.as_default():
             if isTrainBatch:
-
-                tf.summary.scalar(
-                    f'{prefix}/predictionLoss', minibatchOutput['predictionLoss'], step=batchIdx)
-                tf.summary.scalar(
-                    f'{prefix}/regLoss', minibatchOutput['regularizationLoss'], step=batchIdx)
                 tf.summary.scalar(f'{prefix}/gradNorm',
                                   minibatchOutput['gradNorm'], step=batchIdx)
+            tf.summary.scalar(
+                f'{prefix}/predictionLoss', minibatchOutput['predictionLoss'], step=batchIdx)
+            tf.summary.scalar(
+                f'{prefix}/regLoss', minibatchOutput['regularizationLoss'], step=batchIdx)
             tf.summary.scalar(f'{prefix}/seqErrorRate',
                               tf.reduce_mean(minibatchOutput['seqErrorRate']), step=batchIdx)
             tf.summary.scalar(f'{prefix}/computationTime',
                               computationTime, step=batchIdx)
-            #if isTrainBatch:
-            #    tf.summary.scalar(
-            #        f'{prefix}/lr', self.optimizer._decayed_lr(tf.float32), step=batchIdx)
+            if isTrainBatch:
+                tf.summary.scalar(
+                    f'{prefix}/lr', self.optimizer._decayed_lr(tf.float32), step=batchIdx)
 
     @tf.function()
     def _trainStep(self, datasetIdx, layerIdx):
@@ -727,7 +733,7 @@ class NeuralSequenceDecoder(object):
                                                     logits_time_major=False, unique=None, blank_index=-1, name=None)
 
             pred_loss = tf.reduce_mean(pred_loss)
-
+            regularization_loss = tf.math.add_n(self.model.losses) + self.inputLayers[layerIdx].losses
         elif self.args['lossType'] == 'ce':
             mask = tf.tile(data['ceMask'][:, :, tf.newaxis], [
                                 1, 1, self.args['dataset']['nClasses']])
@@ -774,6 +780,8 @@ class NeuralSequenceDecoder(object):
         output['nSeqElements'] = data['nSeqElements']
         output['transcription'] = data['transcription']
         output['logitLengths'] = nTimeSteps
+        output['predictionLoss'] = pred_loss
+        output['regularizationLoss'] = regularization_loss
 
         return output
 

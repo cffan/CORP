@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #to run on your machine, you'll need to change the directories specified in
-#NeuralDecoder/neuralDecoder/configs/dataset/corp_seed_model_release.yaml
+#NeuralDecoder/neuralDecoder/configs/dataset/willett_nature_baseline.yaml
 #and change "outputDir" specified below
 
 python -m neuralDecoder.main --multirun hydra/launcher=gpu_slurm_shenoy \

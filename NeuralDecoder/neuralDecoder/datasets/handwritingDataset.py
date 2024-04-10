@@ -47,7 +47,6 @@ class HandwritingDataset():
             data_files = sorted([str(x) for x in pathlib.Path(fileDir).glob("*.tfrecord")])
             label_files = None
             if labelDir is not None:
-                print(f'Loading labels from {labelDir}')
                 label_files = sorted([str(x) for x in pathlib.Path(labelDir).glob("*.tfrecord")])
                 assert len(data_files) == len(label_files)
             if isTraining:
@@ -63,10 +62,8 @@ class HandwritingDataset():
                 dataset = tf.data.TFRecordDataset(data_files)
             return dataset
 
-        print(f'Loading data from {self.rawFileDir}')
         rawDataset = _loadDataset(self.rawFileDir, self.labelDir)
         if self.syntheticFileDir and self.syntheticMixingRate > 0:
-            print(f'Load data from {self.syntheticFileDir}')
             syntheticDataset = _loadDataset(self.syntheticFileDir, None)
             dataset = tf.data.experimental.sample_from_datasets(
                 [rawDataset.repeat(), syntheticDataset.repeat()],

@@ -23,7 +23,7 @@ hydra:
           - wandb.setup.group
 
 defaults:
-  - dataset: handwriting_all_days
+  - dataset: corp_seed_model_release
   - model: gru
   - wandb: defaults
 
