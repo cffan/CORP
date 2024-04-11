@@ -16,25 +16,37 @@ RUN apt -y install cmake
 RUN pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Download CORP
-RUN wget https://github.com/cffan/CORP/archive/refs/heads/master.zip
-RUN unzip master.zip
-RUN rm -rf master.zip
+RUN wget https://codeload.github.com/cffan/CORP/zip/refs/heads/falcon -O CORP.zip
+RUN unzip CORP.zip
+RUN rm -rf CORP.zip
 
 # Install LM decoder
-WORKDIR "/CORP-master/LanguageModelDecoder/runtime/server/x86"
+WORKDIR "/CORP-falcon/LanguageModelDecoder/runtime/server/x86"
 RUN python3.9 setup.py install
 
 # Install Neural decoder
-WORKDIR "/CORP-master/NeuralDecoder"
+WORKDIR "/CORP-falcon/NeuralDecoder"
 RUN pip install -e .
 
 # Install Online recalibrator
-WORKDIR "/CORP-master/OnlineRecalibrator"
+WORKDIR "/CORP-falcon/OnlineRecalibrator"
 RUN pip install -e .
 
 # Install Falcon challenge
-RUN pip install falcon_challenge --upgrade
+# RUN pip install falcon_challenge --upgrade
+WORKDIR /
+RUN wget https://codeload.github.com/snel-repo/falcon-challenge/zip/refs/heads/h2_eval -O falcon.zip
+RUN unzip falcon.zip
+RUN rm -rf falcon.zip
+WORKDIR "/falcon-challenge-h2_eval"
+RUN pip install -e .
 
 # Add pretrained models, data, and codes
 WORKDIR /
 COPY ./ /falcon_challenge
+
+ENV EVAL_DATA_PATH "/dataset/evaluation_data"
+
+# Run decoder
+WORKDIR /falcon_challenge
+CMD ["/bin/bash", "-c", "python3.9 run_evalulator.py --evaluation local --corp-config config/falcon_held_out_oracle.yaml --phase test"]
