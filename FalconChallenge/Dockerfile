@@ -33,13 +33,13 @@ WORKDIR "/CORP-falcon/OnlineRecalibrator"
 RUN pip install -e .
 
 # Install Falcon challenge
-# RUN pip install falcon_challenge --upgrade
-WORKDIR /
-RUN wget https://codeload.github.com/snel-repo/falcon-challenge/zip/refs/heads/h2_eval -O falcon.zip
-RUN unzip falcon.zip
-RUN rm -rf falcon.zip
-WORKDIR "/falcon-challenge-h2_eval"
-RUN pip install -e .
+RUN pip install falcon_challenge --upgrade
+# WORKDIR /
+# RUN wget https://codeload.github.com/snel-repo/falcon-challenge/zip/refs/heads/h2_eval -O falcon.zip
+# RUN unzip falcon.zip
+# RUN rm -rf falcon.zip
+# WORKDIR "/falcon-challenge-h2_eval"
+# RUN pip install -e .
 
 # Add pretrained models, data, and codes
 WORKDIR /
