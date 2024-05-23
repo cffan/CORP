@@ -1,5 +1,6 @@
 import os
 import re
+from typing import List
 from pathlib import Path
 import numpy as np
 import tensorflow as tf
@@ -23,6 +24,7 @@ class CORPDecoder(BCIDecoder):
         self.zscore_buffer = []
         self.token_def = CHAR_DEF
         self.mode = self.corp_config.mode
+        self.batch_size = 1
 
         physical_devices = tf.config.list_physical_devices("GPU")
         if len(physical_devices) > 0:
@@ -152,9 +154,14 @@ class CORPDecoder(BCIDecoder):
 
             return gpt2_decoded, confidence
 
-    def reset(self, dataset: Path = ""):
-        # TODO: dataset path format?
-        sess_name = re.search(r"\d{4}\.\d{2}\.\d{2}", dataset.absolute().as_posix()).group()
+    def reset(self, dataset_tags: List[str] = [""]):
+        r"""
+            Denote the specific session that is being evaluated is denoted through this function.
+            Called when at least one datafile in batch changes.
+            When called, dataset_tags will be of length batch_size, with active data hashes as returned from hash_dataset(datafiles).
+            
+        """
+        sess_name = re.search(r"\d{4}\.\d{2}\.\d{2}", dataset_tags[0].absolute().as_posix()).group()
         sess_idx = self.corp_config.sessions.index(sess_name)
         self.eval_day_idx = self.corp_config.session_input_layers[sess_idx]
         if self.mode == "online_recal":
@@ -162,11 +169,16 @@ class CORPDecoder(BCIDecoder):
         self.zscore_buffer = []
 
     def predict(self, neural_feats: np.ndarray) -> np.ndarray:
+        r"""
+            neural_observations: array of shape (batch_size, n_channels), binned spike counts
+        """
         # Buffer data
-        self.input_buffer.append(neural_feats)
+        self.input_buffer.append(neural_feats[0])
         return None
 
-    def on_trial_end(self):
+    def on_done(self, dones: np.ndarray):
+        # Optional hook available in H2 (handwriting) to allow periodic test-time adaptation
+        # dones will be one for the trials that just ended
         # Normalize buffered data
         raw_feats = np.stack(self.input_buffer, axis=0)  # [T, C]
         self.zscore_buffer.extend(self.input_buffer.copy())

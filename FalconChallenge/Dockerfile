@@ -39,14 +39,28 @@ RUN pip install falcon_challenge --upgrade
 # RUN unzip falcon.zip
 # RUN rm -rf falcon.zip
 # WORKDIR "/falcon-challenge-h2_eval"
+<<<<<<< HEAD
 # RUN pip install -e .
+=======
+
+ENV EVAL_DATA_PATH "/dataset/evaluation_data"
+ENV SPLIT "h2"
+ENV PHASE "test"
+ENV PREDICTION_PATH "/submission/submission.csv"
+ENV PREDICTION_PATH_LOCAL "/tmp/submission.pkl"
+ENV GT_PATH = "/tmp/ground_truth.pkl"
+>>>>>>> 3aa849e (Update for batch mode)
 
 # Add pretrained models, data, and codes
 WORKDIR /
 COPY ./ /falcon_challenge
-
-ENV EVAL_DATA_PATH "/dataset/evaluation_data"
+WORKDIR /falcon_challenge/falcon-challenge/
+RUN pip install .
 
 # Run decoder
 WORKDIR /falcon_challenge
+<<<<<<< HEAD
 CMD ["/bin/bash", "-c", "python3.9 run_evalulator.py --evaluation local --corp-config config/falcon_held_out_oracle.yaml --phase test"]
+=======
+CMD ["/bin/bash", "-c", "python3.9 run_evalulator.py --evaluation local --corp-config config/falcon_held_out_eval.yaml --phase ${PHASE} --split ${SPLIT}"]
+>>>>>>> 3aa849e (Update for batch mode)

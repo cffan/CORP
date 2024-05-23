@@ -1,0 +1,3 @@
+[submodule "FalconChallenge/falcon-challenge"]
+	path = FalconChallenge/falcon-challenge
+	url = git@github.com:snel-repo/falcon-challenge.git

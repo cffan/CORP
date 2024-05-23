@@ -136,3 +136,5 @@ FalconChallenge/buffered_data.pkl
 FalconChallenge/h2_internal.ipynb
 FalconChallenge/data
 falcon_corp.tar.gz
+FalconChallenge/local_gt.pkl
+FalconChallenge/local_prediction.pkl

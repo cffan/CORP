@@ -34,7 +34,8 @@ def main():
         corp_config_path=args.corp_config,
     )
 
-    print(evaluator.evaluate_files(decoder, evaluator.get_eval_files(phase=args.phase)[:]))
+    evaluator.evaluate(decoder, phase=args.phase)
+    # print(evaluator.evaluate_files(decoder, evaluator.get_eval_files(phase=args.phase)[:]))
 
 
 if __name__ == "__main__":

@@ -76,9 +76,9 @@ output_dir:
 # Seed model
 init_model_dir: ./data/held_in_seed_model
 init_model_ckpt_idx: 17000
-ngram_dir: ./data/language_model
-lm_cache_dir: ./data/huggingface
-gpt2_model: gpt2-xl
+ngram_dir: #./data/language_model
+lm_cache_dir: #./data/huggingface
+gpt2_model: #gpt2-xl
 
 # CORP config
 recalibration: True

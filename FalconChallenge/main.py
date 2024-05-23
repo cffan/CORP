@@ -63,7 +63,7 @@ def run(args):
 
             if decoder.mode == "dev":
                 decoder.gt_transcription = transcriptions[trial_id]
-            decoded = decoder.on_trial_end()
+            decoded = decoder.on_done()
 
             cer = eval_cer([decoded], [transcriptions[trial_id]])
             wer = eval_wer([decoded], [transcriptions[trial_id]])
