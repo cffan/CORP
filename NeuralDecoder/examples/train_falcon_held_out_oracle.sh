@@ -6,9 +6,10 @@
 
 python -m neuralDecoder.main \
     --multirun hydra/launcher=gpu_slurm_shenoy \
-    dataset=falcon_held_out_oracle \
+    dataset=falcon_held_out_oracle_session1,falcon_held_out_oracle_session2,falcon_held_out_oracle_session3,falcon_held_out_oracle_session4,falcon_held_out_oracle_session5 \
     batchSize=48 \
     nBatchesToTrain=20000 \
     batchesPerVal=500 \
     model=gru_stack_handwriting \
-    outputDir=/oak/stanford/groups/henderj/stfan/logs/handwriting_logs/falcon_held_out_oracle
+    seed=1,2,3,4,5 \
+    outputDir=/oak/stanford/groups/henderj/stfan/logs/handwriting_logs/falcon_held_out_oracle_sessions

@@ -1,4 +1,5 @@
 import os
+import re
 from time import time
 
 import numpy as np
@@ -123,9 +124,12 @@ def cer_with_gpt2_decoder(model, tokenizer, nbestOutputs, acousticScale,
             trueSent = trueSent.replace('>',' ')
             trueSent = trueSent.replace('~','.')
             trueSent = trueSent.replace('#','')
+            trueSent = re.sub(r"([\.,!?])", r" \1", trueSent)
         if outputType == 'speech' or outputType == 'speech_sil':
             trueSent = trueSent.strip()
         trueSentencesProcessed.append(trueSent)
+
+    decodedSentences = [re.sub(r"([\.,!?])", r" \1", s) for s in decodedSentences]
 
     cer, wer = _cer_and_wer(decodedSentences, trueSentencesProcessed, outputType, returnCI)
 
@@ -133,6 +137,7 @@ def cer_with_gpt2_decoder(model, tokenizer, nbestOutputs, acousticScale,
         'cer': cer,
         'wer': wer,
         'decoded_transcripts': decodedSentences,
+        'true_transcripts': trueSentencesProcessed,
         'confidences': confidences
     }
 

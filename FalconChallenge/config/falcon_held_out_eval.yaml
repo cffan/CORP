@@ -70,7 +70,6 @@ start_session_idx: 11
 
 # Data
 seed_model_data_dir: /oak/stanford/groups/henderj/stfan/code/CORP/FalconChallenge//data/nwb/held_in_tfrecords/
-data_dir: /oak/stanford/groups/henderj/stfan/code/CORP/FalconChallenge//data/nwb/held_out_tfrecords/
 output_dir:
 
 # Seed model

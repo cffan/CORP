@@ -12,5 +12,6 @@ python -m neuralDecoder.main \
     batchesPerSave=50 \
     batchesPerVal=50 \
     model=gru_stack_handwriting \
-    'loadDir="/oak/stanford/groups/henderj/stfan/logs/handwriting_logs/corp_falcon_seed_model_minival/batchSize=48,batchesPerVal=500,dataset=corp_falcon_model,model=gru_stack_handwriting,nBatchesToTrain=20000"' \
-    outputDir=/oak/stanford/groups/henderj/stfan/logs/handwriting_logs/finetune_falcon_held_out_sessions
+    seed=1,2,3,4,5 \
+    'loadDir="/oak/stanford/groups/henderj/stfan/logs/handwriting_logs/corp_falcon_seed_model_heldin/batchSize=48,batchesPerVal=500,dataset=falcon_seed_sessions,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1"' \
+    outputDir=/oak/stanford/groups/henderj/stfan/logs/handwriting_logs/falcon_held_out_few_shot

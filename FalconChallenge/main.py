@@ -39,8 +39,16 @@ def eval_wer(decoded_transcriptions, gt_transcriptions):
         total_dist += len(gt)
     return total_edit_dist / total_dist
 
+def set_seed(seed):
+    import random
+    import numpy as np
+    import tensorflow as tf
+    random.seed(seed)
+    np.random.seed(seed)
+    tf.random.set_seed(seed)
 
 def run(args):
+    set_seed(args.seed)
     task_config = FalconConfig()
     decoder = CORPDecoder(task_config, args.config)
 
@@ -56,14 +64,14 @@ def run(args):
 
         for trial_id in range(n_trials):
             # print(trial_id, tx_feats[trial_id].shape, transcriptions[trial_id], blocks[trial_id])
-            decoder.reset(Path(sess_data_path))
+            decoder.reset([Path(sess_data_path)])
             n_bins = tx_feats[trial_id].shape[0]
             for i in range(n_bins):
-                decoder.predict(tx_feats[trial_id][i])
+                decoder.predict(tx_feats[trial_id][i].reshape(1, -1))
 
             if decoder.mode == "dev":
                 decoder.gt_transcription = transcriptions[trial_id]
-            decoded = decoder.on_done()
+            decoded = decoder.on_done(None)
 
             cer = eval_cer([decoded], [transcriptions[trial_id]])
             wer = eval_wer([decoded], [transcriptions[trial_id]])
@@ -81,6 +89,12 @@ def run(args):
     wer = eval_wer(decoded_transcriptions, gt_transcriptions)
     print(f"Average CER {cer:.2f} WER {wer:.2f}")
 
+    with open(args.output_path, "wb") as f:
+        pickle.dump({
+            'decoded': decoded_transcriptions,
+            'gt': gt_transcriptions,
+        }, f)
+
     # Save buffered data
     if args.save_val:
         # Save buffered data
@@ -97,8 +111,10 @@ def run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_val", action="store_true")
+    parser.add_argument("--output_path", type=str)
     parser.add_argument("--config", type=str)
     parser.add_argument("--eval_data", type=str)
+    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
     run(args)
