@@ -20,6 +20,10 @@ def main():
     parser.add_argument(
         '--phase', choices=['minival', 'test'], default='minival'
     )
+    parser.add_argument(
+        '--held-out-only', action='store_true',
+        help='Evaluate on held-out data only.'
+    )
     args = parser.parse_args()
 
     evaluator = FalconEvaluator(
@@ -34,7 +38,7 @@ def main():
         corp_config_path=args.corp_config,
     )
 
-    evaluator.evaluate(decoder, phase=args.phase)
+    evaluator.evaluate(decoder, phase=args.phase, held_out_only=args.held_out_only)
     # print(evaluator.evaluate_files(decoder, evaluator.get_eval_files(phase=args.phase)[:]))
 
 

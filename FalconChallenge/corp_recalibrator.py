@@ -32,6 +32,7 @@ class CORPRecalibrator:
         self.curr_data_buffer = []
         self.token_def = CHAR_DEF
 
+        self._init_optimizer()
         self._load_prev_data()
         self.curr_day_idx = self.config.start_session_idx - 1
 
@@ -282,8 +283,12 @@ class CORPRecalibrator:
 
         return ctc_loss, reg_loss, total_loss, grad_norm
 
-    def reset(self, day_idx):
+    def reset(self, day_idx, decoder):
         # Call before session starts
+
+        if decoder != self.nsd:
+            self.nsd = decoder
+            self._init_optimizer()
 
         if day_idx != self.curr_day_idx:
             print(f"Setting recalibrator to day {day_idx}")

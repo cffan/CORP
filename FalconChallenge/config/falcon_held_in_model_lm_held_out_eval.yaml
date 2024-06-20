@@ -1,0 +1,113 @@
+hydra:
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+  job:
+    config:
+      override_dirname:
+        exclude_keys:
+          - output_dir
+          - data_dir
+          - init_model_dir
+          - init_model_ckpt_idx
+          - sessions
+          - ngram_dir
+          - session_input_layers
+
+sessions:
+  - 2022.05.18
+  - 2022.05.23
+  - 2022.05.25
+  - 2022.06.01
+  - 2022.06.03
+  - 2022.06.06
+  - 2022.06.08
+  - 2022.06.13
+  - 2022.06.15
+  - 2022.06.22
+  - 2022.09.01
+  - 2022.09.29
+  - 2022.10.06
+  - 2022.10.18
+  - 2022.10.25
+  - 2022.10.27
+  - 2022.11.01
+  - 2022.11.03
+  - 2022.12.08
+  - 2022.12.15
+  - 2023.02.28
+  - 2023.04.17
+  - 2023.05.31
+  - 2023.06.28
+  - 2023.08.16
+  - 2023.10.09
+session_input_layers: [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21, 22, 23, 24, 25]
+start_session_idx: 21
+
+# Data
+seed_model_data_dir: /oak/stanford/groups/henderj/stfan/code/CORP/FalconChallenge//data/nwb/held_in_tfrecords/
+output_dir:
+
+# Seed model
+init_model_dir: ./data/held_in_seed_model/model
+init_model_ckpt_idx:
+ngram_dir: ./data/language_model
+lm_cache_dir: ./data/huggingface
+gpt2_model: gpt2-xl
+
+# CORP config
+recalibration: True
+seed: 0
+task: handwriting
+feat_dim: 192
+learning_rate: 0.01
+batch_size: 64
+new_data_percent: 0.6
+min_train_steps: 1
+max_train_steps: 200
+num_norm_sentences: 10
+num_curr_sentences: -1
+pseudo_label_method: gpt2
+use_lm_confidence: False
+acoustic_scale: 0.8
+blank_penalty: 11
+nbest: 10
+gpt2_acoustic_scale: 0.5
+gpt2_alpha: 1.0
+loss_threshold: 4
+white_noise_sd: 0.8
+constant_offset_sd: 0.0
+random_walk_sd: 0.00
+random_walk_axis: -1
+early_stop_criteria: 0.5
+nonstationarity:
+freeze_backbone: False
+zscore_window: 15000 # 5min @ 20ms bin
+
+
+mode: no_recal # no_recal, online_recal
+prev_data_buffer:

@@ -66,15 +66,15 @@ session_input_layers: [
     19,
     20,
     21, 22, 23, 24, 25]
-start_session_idx: 11
+start_session_idx: 21
 
 # Data
 seed_model_data_dir: /oak/stanford/groups/henderj/stfan/code/CORP/FalconChallenge//data/nwb/held_in_tfrecords/
 output_dir:
 
 # Seed model
-init_model_dir: ./data/held_in_seed_model
-init_model_ckpt_idx: 17000
+init_model_dir: ./data/held_in_seed_model/model
+init_model_ckpt_idx:
 ngram_dir: #./data/language_model
 lm_cache_dir: #./data/huggingface
 gpt2_model: #gpt2-xl

@@ -25,6 +25,7 @@ class CORPDecoder(BCIDecoder):
         self.token_def = CHAR_DEF
         self.mode = self.corp_config.mode
         self.batch_size = 1
+        self.eval_day_idx = self.corp_config.start_session_idx
 
         physical_devices = tf.config.list_physical_devices("GPU")
         if len(physical_devices) > 0:
@@ -46,6 +47,10 @@ class CORPDecoder(BCIDecoder):
 
     def _load_model(self, init_model_dir, ckpt_idx):
         # Load model config and set which checkpoint to load
+        if not isinstance(init_model_dir, str):
+            if self.eval_day_idx not in init_model_dir:
+                return self.decoder
+            init_model_dir = init_model_dir[self.eval_day_idx]
         args = OmegaConf.load(os.path.join(init_model_dir, "args.yaml"))
         args["mode"] = "infer"
         args["loadCheckpointIdx"] = ckpt_idx
@@ -105,8 +110,9 @@ class CORPDecoder(BCIDecoder):
         if hasattr(self, "gpt2_decoder"):
             return
 
+        device = "/gpu:0" if self.mode != 'online_recal' else "/cpu:0"  # EvalAI has limited GPU memory
         print(f"Loading gpt2 {model}")
-        with tf.device("/cpu:0"):
+        with tf.device(device):
             self.gpt2_decoder, self.gpt2_tokenizer = lmDecoderUtils.build_gpt2(
                 model, cacheDir=self.corp_config.lm_cache_dir
             )
@@ -164,8 +170,11 @@ class CORPDecoder(BCIDecoder):
         sess_name = re.search(r"\d{4}\.\d{2}\.\d{2}", dataset_tags[0].absolute().as_posix()).group()
         sess_idx = self.corp_config.sessions.index(sess_name)
         self.eval_day_idx = self.corp_config.session_input_layers[sess_idx]
+        if not isinstance(self.corp_config["init_model_dir"], str):
+            self.decoder = self._load_model(self.corp_config["init_model_dir"], 
+                                            self.corp_config["init_model_ckpt_idx"])  # Reload for incrementally trained models
         if self.mode == "online_recal":
-            self.recalibrator.reset(self.eval_day_idx)
+            self.recalibrator.reset(self.eval_day_idx, self.decoder)
         self.zscore_buffer = []
 
     def predict(self, neural_feats: np.ndarray) -> np.ndarray:

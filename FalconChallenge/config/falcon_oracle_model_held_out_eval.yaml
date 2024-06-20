@@ -73,8 +73,13 @@ seed_model_data_dir: /oak/stanford/groups/henderj/stfan/code/CORP/FalconChalleng
 output_dir:
 
 # Seed model
-init_model_dir: /oak/stanford/groups/henderj/stfan/logs/handwriting_logs/falcon_held_out_oracle/batchSize=48,batchesPerVal=500,dataset=falcon_held_out_oracle,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1
-init_model_ckpt_idx: 17000
+init_model_dir: 
+  21: ./data/oracle_model/session1
+  22: ./data/oracle_model/session2
+  23: ./data/oracle_model/session3
+  24: ./data/oracle_model/session4
+  25: ./data/oracle_model/session5
+init_model_ckpt_idx: 
 ngram_dir: #./data/language_model
 lm_cache_dir: #./data/huggingface
 gpt2_model: #gpt2-xl
@@ -108,5 +113,5 @@ nonstationarity:
 freeze_backbone: False
 zscore_window: 15000 # 5min @ 20ms bin
 
-mode: online_recal # no_recal, online_recal
+mode: on_recal # no_recal, online_recal
 prev_data_buffer:

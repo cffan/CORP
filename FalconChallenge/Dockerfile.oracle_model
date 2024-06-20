@@ -1,0 +1,61 @@
+FROM tensorflow/tensorflow:2.7.0-gpu
+
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+RUN apt update
+RUN apt -y install apt-transport-https ca-certificates gnupg software-properties-common wget python3.9 python3-pip python3.9-dev
+RUN python3.9 -m pip install --upgrade pip
+
+# Install CMake
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
+RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+RUN apt update
+RUN apt -y install cmake
+
+# Install pytorch
+RUN pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Download CORP
+RUN wget https://codeload.github.com/cffan/CORP/zip/refs/heads/falcon -O CORP.zip
+RUN unzip CORP.zip
+RUN rm -rf CORP.zip
+
+# Install LM decoder
+WORKDIR "/CORP-falcon/LanguageModelDecoder/runtime/server/x86"
+RUN python3.9 setup.py install
+
+# Install Neural decoder
+WORKDIR "/CORP-falcon/NeuralDecoder"
+RUN pip install -e .
+
+# Install Online recalibrator
+WORKDIR "/CORP-falcon/OnlineRecalibrator"
+RUN pip install -e .
+
+# Install Falcon challenge
+#RUN pip install falcon_challenge --upgrade
+
+ENV EVAL_DATA_PATH "/dataset/evaluation_data"
+ENV SPLIT "h2"
+ENV PHASE "test"
+ENV EVAL_LOC "remote"
+ENV PREDICTION_PATH "/submission/submission.csv"
+ENV PREDICTION_PATH_LOCAL "/tmp/submission.pkl"
+ENV GT_PATH = "/tmp/ground_truth.pkl"
+
+# Add pretrained models, data, and codes
+WORKDIR /
+COPY ./*.py /falcon_challenge/
+COPY ./config /falcon_challenge/config
+COPY ./falcon-challenge /falcon_challenge/falcon-challenge
+COPY ./data/oracle_model/batchSize=48,batchesPerVal=500,dataset=falcon_held_out_oracle_session1,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1 /falcon_challenge/data/oracle_model/session1
+COPY ./data/oracle_model/batchSize=48,batchesPerVal=500,dataset=falcon_held_out_oracle_session2,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1 /falcon_challenge/data/oracle_model/session2
+COPY ./data/oracle_model/batchSize=48,batchesPerVal=500,dataset=falcon_held_out_oracle_session3,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1 /falcon_challenge/data/oracle_model/session3
+COPY ./data/oracle_model/batchSize=48,batchesPerVal=500,dataset=falcon_held_out_oracle_session4,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1 /falcon_challenge/data/oracle_model/session4
+COPY ./data/oracle_model/batchSize=48,batchesPerVal=500,dataset=falcon_held_out_oracle_session5,model=gru_stack_handwriting,nBatchesToTrain=20000,seed=1 /falcon_challenge/data/oracle_model/session5
+WORKDIR /falcon_challenge/falcon-challenge/
+RUN pip install .
+
+# Run decoder
+WORKDIR /falcon_challenge
+CMD ["/bin/bash", "-c", "python3.9 run_evalulator.py --held-out-only --evaluation ${EVAL_LOC} --corp-config config/falcon_oracle_model_held_out_eval.yaml --phase ${PHASE} --split ${SPLIT}"]
